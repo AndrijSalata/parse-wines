@@ -24,10 +24,48 @@ from webdriver_manager.chrome import ChromeDriverManager
 import config
 
 URL_DATA = f"https://wine.databdn.com/#/app/database/allContinents/allCountries/allCategories/allEntries/"
-CATEGORY = 'Beer Importers'
+# CATEGORY = 'Beer Importers'
+# CATEGORY = 'Beer Distributors'
+CATEGORY = 'Beer Retailers'
 
 
-def main_parser():
+def get_details(driver):
+    # get details
+    details_list = []
+    details_categories_list = []
+    for row_number in range(1, 21):
+        # read contact info
+        xpath = f'/html/body/div[1]/div[2]/div[2]/div/div[2]/div[2]/div/div[2]/div/table/tbody/tr[{row_number}]/td[1]/a[1]'
+        button = driver.find_element(by=By.XPATH, value=xpath)
+        driver.execute_script("arguments[0].click();", button)
+        time.sleep(0.1)
+        details = driver.find_element(by=By.XPATH, value='/html/body/div[4]/div[2]/div/div[2]/div/div[2]')
+        details = details.text
+        details_list.append(details)
+        # read categories
+        xpath = f'/html/body/div[4]/div[2]/div/div[2]/ul/li[2]/a'
+        button = driver.find_element(by=By.XPATH, value=xpath)
+        driver.execute_script("arguments[0].click();", button)
+        time.sleep(0.1)
+        details_categories = driver.find_element(by=By.XPATH, value='/html/body/div[4]/div[2]/div/div[2]/div/div[2]')
+        details_categories = details_categories.text
+        details_categories_list.append(details_categories)
+
+        # unselect menu
+        if row_number == 1:
+            xOffset = 0
+            yOffset = -100
+        else:
+            xOffset = 0
+            yOffset = 0
+        # Performs mouse move action onto the element
+        webdriver.ActionChains(driver).move_by_offset(xOffset, yOffset).click().perform()
+    details_list.append('')
+    details_categories_list.append('')
+    return details_list, details_categories_list
+
+
+def main_parser(category):
     try:
         ua = UserAgent().chrome
     except FakeUserAgentError:
@@ -60,50 +98,53 @@ def main_parser():
     yOffset = 100
     # Performs mouse move action onto the element
     webdriver.ActionChains(driver).move_by_offset(xOffset, yOffset).click().perform()
-    # ActionChains(driver).move_to_element(driver.find_element(by=By.CLASS_NAME, value='ColVis_ShowAll')).click().perform()
-    # driver.find_element_by_class_name('/html/body/div[1]/div[2]/div[2]/div/div[2]/div[1]/div/div[2]/div/div/div[5]/div[2]/a[1]').click()
-    # '/html/body/div[1]/div[2]/div[2]/div/div[2]/div[2]/div/div[2]/div/table'
 
     # get number of pages
     driver.implicitly_wait(1)
     time.sleep(2)
     count = driver.find_element(by=By.XPATH, value='/html/body/div[1]/div[2]/div[2]/div/div[2]/div[2]/div/div[1]/strong')
     time.sleep(2)
-    driver.implicitly_wait(10000)
     count = count.text.replace(',', '')
     count = int(count)
     driver.implicitly_wait(1)
     pages = ceil(count / 20)
 
+        # read first page
     df = pd.DataFrame()
     all_tables = pd.read_html(driver.page_source, attrs={'id': 'bfi-table'})
+    contacts, categories = get_details(driver)
+    all_tables[0]['Contacts'] = contacts
+    all_tables[0]['Categories'] = categories
     df = pd.concat([df, all_tables[0]], axis=0)
     print(df.shape)
 
+    # list other pages
     for i in range(pages - 2):
         button = driver.find_element(by=By.ID, value='bfi-table_next')
         driver.execute_script("arguments[0].click();", button)
 
         driver.implicitly_wait(1)
         all_tables = pd.read_html(driver.page_source, attrs={'id': 'bfi-table'})
+        all_tables[0]['Contacts'] = contacts
+        all_tables[0]['Categories'] = categories
         df = pd.concat([df, all_tables[0]], axis=0)
         print(df.shape)
+
+        # # reset previous mouse position
+        # xOffset = 100
+        # yOffset = 0
+        # # Performs mouse move action onto the element
+        # webdriver.ActionChains(driver).move_by_offset(xOffset, yOffset).click().perform()
 
     filename = CATEGORY.lower().replace(' ', '_')
     df.to_csv(f'results/{filename}.csv', index=False)
     print(df.shape)
-    # element = driver.find_element_by_css('div[class*="loadingWhiteBox"]')
-    # driver.execute_script("arguments[0].click();", element)
-    #
-    # element = driver.find_element_by_css('div[class*="loadingWhiteBox"]')
-    # webdriver.ActionChains(driver).move_to_element(element).click(element).perform()
-
-
-    # details = '/html/body/div[1]/div[2]/div[2]/div/div[2]/div[2]/div/div[2]/div/table/tbody/tr[1]/td[1]/a[1]'
-
 
     driver.quit()
 
 
 if __name__ == "__main__":
-    main_parser()
+    CATEGORY = 'Beer Retailers'
+    main_parser('Beer Importers')
+    main_parser('Beer Distributors')
+    main_parser('Beer Retailers')
