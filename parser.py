@@ -56,7 +56,7 @@ def get_details(driver, n):
         while not status:
             try:
                 # details_xpath = '/html/body/div[4]/div[2]/div/div[2]/div'
-                detail_xpath = '/html/body/div[4]/div[2]/div/div[2]'
+                detail_xpath = '/html/body/div[5]/div[2]/div/div[2]/div'
                 details = WebDriverWait(driver, 100).until(
                     EC.visibility_of_element_located((By.XPATH, detail_xpath)))
                 details = details.get_attribute('outerHTML')
@@ -74,7 +74,7 @@ def get_details(driver, n):
         status = False
         while not status:
             try:
-                xpath = f'/html/body/div[4]/div[2]/div/div[2]/ul/li[2]/a'
+                xpath = f'/html/body/div[5]/div[2]/div/div[2]/ul/li[2]/a'
                 button = WebDriverWait(driver, 100).until(EC.element_to_be_clickable((By.XPATH, xpath)))
                 driver.execute_script("arguments[0].click();", button)
                 status = True
@@ -93,7 +93,7 @@ def get_details(driver, n):
         while not status:
             try:
                 # category_xpath = '/html/body/div[4]/div[2]/div/div[2]/div/div[2]'
-                category_xpath = '/html/body/div[4]/div[2]/div/div[2]'
+                category_xpath = '/html/body/div[5]/div[2]/div/div[2]'
                 details_categories = WebDriverWait(driver, 100).until(
                     EC.visibility_of_element_located((By.XPATH, category_xpath)))
                 details_categories = details_categories.get_attribute('outerHTML')
